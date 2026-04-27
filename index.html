@@ -1,4 +1,3 @@
-<!-- Full updated index.html with Firebase terminal commands -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -19,7 +18,12 @@
     }
 
     * { box-sizing: border-box; }
-    html, body { min-height: 100%; margin: 0; }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+    }
 
     body {
       display: grid;
@@ -32,72 +36,206 @@
       font-family: var(--font);
     }
 
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        repeating-linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.05) 0,
+          rgba(255, 255, 255, 0.05) 1px,
+          transparent 1px,
+          transparent 4px
+        );
+      mix-blend-mode: screen;
+      opacity: 0.16;
+      z-index: 5;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, 0.72) 100%);
+      z-index: 6;
+    }
+
     .terminal-shell {
       width: min(980px, calc(100vw - 32px));
       height: min(680px, calc(100vh - 32px));
+      min-height: 460px;
+      position: relative;
       border: 2px solid var(--green-dim);
       background: rgba(2, 9, 4, 0.94);
-      box-shadow: 0 0 32px rgba(50,255,117,0.2);
+      box-shadow:
+        0 0 0 4px rgba(0, 0, 0, 0.75),
+        0 0 32px rgba(50, 255, 117, 0.28),
+        inset 0 0 42px rgba(18, 161, 74, 0.18);
+      isolation: isolate;
+    }
+
+    .terminal-shell::before {
+      content: "";
+      position: absolute;
+      inset: 10px;
+      border: 1px solid rgba(50, 255, 117, 0.22);
+      pointer-events: none;
     }
 
     .terminal-bar {
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      justify-content: space-between;
       height: 42px;
       padding: 0 18px;
       border-bottom: 1px solid var(--green-dim);
+      background: linear-gradient(180deg, rgba(21, 67, 31, 0.52), rgba(6, 16, 9, 0.76));
+      letter-spacing: 0;
+      text-transform: uppercase;
+      text-shadow: 0 0 10px rgba(50, 255, 117, 0.72);
+    }
+
+    .status-lights { display: flex; gap: 8px; }
+
+    .status-lights span {
+      width: 10px;
+      height: 10px;
+      border: 1px solid var(--green);
+      background: var(--green-soft);
+      box-shadow: 0 0 10px rgba(50, 255, 117, 0.5);
     }
 
     .terminal {
       height: calc(100% - 42px);
       padding: 22px;
       overflow: auto;
-      font-size: 16px;
-      line-height: 1.5;
+      scrollbar-width: thin;
+      scrollbar-color: var(--green-dim) transparent;
+      text-shadow: 0 0 8px rgba(50, 255, 117, 0.74);
+      font-size: clamp(15px, 1.8vw, 18px);
+      line-height: 1.48;
     }
 
-    .line { white-space: pre-wrap; }
-    .dim { opacity: 0.8; }
-    .amber { color: var(--amber); }
-    .error { color: var(--red); }
+    .terminal::-webkit-scrollbar { width: 10px; }
+    .terminal::-webkit-scrollbar-thumb { background: var(--green-dim); }
+
+    .line {
+      min-height: 1.48em;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .dim { color: #1ecb5b; opacity: 0.78; }
+
+    .amber {
+      color: var(--amber);
+      text-shadow: 0 0 8px rgba(255, 209, 102, 0.44);
+    }
+
+    .error {
+      color: var(--red);
+      text-shadow: 0 0 8px rgba(255, 92, 92, 0.5);
+    }
+
+    .files {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 4px 18px;
+      max-width: 650px;
+      margin: 6px 0 10px;
+    }
 
     .prompt-row {
       display: flex;
       align-items: baseline;
+      min-height: 1.48em;
+    }
+
+    .prompt {
+      flex: 0 0 auto;
+      color: var(--green);
     }
 
     .command-input {
-      flex: 1;
+      position: relative;
+      flex: 1 1 auto;
+      min-width: 1ch;
       padding-left: 1ch;
       outline: none;
+      caret-color: transparent;
       white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .command-input::after {
+      content: "";
+      display: inline-block;
+      width: 0.62ch;
+      height: 1.05em;
+      margin-left: 1px;
+      transform: translateY(0.18em);
+      background: var(--green);
+      box-shadow: 0 0 10px rgba(50, 255, 117, 0.8);
+      animation: blink 1s steps(1) infinite;
+    }
+
+    .boot { animation: boot-flicker 2.4s steps(2, end) 1; }
+
+    @keyframes blink { 50% { opacity: 0; } }
+
+    @keyframes boot-flicker {
+      0%, 8%, 14%, 19%, 24% { opacity: 0.16; filter: brightness(1.8); }
+      5%, 11%, 16%, 22%, 100% { opacity: 1; filter: brightness(1); }
+    }
+
+    @media (max-width: 620px) {
+      body { place-items: stretch; }
+      .terminal-shell {
+        width: 100vw;
+        height: 100dvh;
+        min-height: 100dvh;
+        border-left: 0;
+        border-right: 0;
+      }
+      .terminal-bar {
+        height: 38px;
+        padding: 0 12px;
+        font-size: 12px;
+      }
+      .terminal {
+        height: calc(100% - 38px);
+        padding: 16px 14px;
+        font-size: 15px;
+      }
     }
   </style>
 </head>
 <body>
-  <main class="terminal-shell">
+  <main class="terminal-shell boot" aria-label="Retro terminal portfolio">
     <header class="terminal-bar">
       <div>SYS/PORTFOLIO/1997</div>
-      <div>ONLINE</div>
+      <div class="status-lights" aria-hidden="true"><span></span><span></span><span></span></div>
     </header>
 
-    <section class="terminal" id="terminal">
+    <section class="terminal" id="terminal" role="application" aria-label="Interactive terminal">
       <div id="output"></div>
       <div class="prompt-row" id="promptRow">
-        <span>guest@portfolio:~$</span>
-        <span id="commandInput" class="command-input" contenteditable="true" spellcheck="false"></span>
+        <span class="prompt">guest@portfolio:~$</span>
+        <span id="commandInput" class="command-input" role="textbox" aria-label="Terminal command input" aria-multiline="false" contenteditable="true" spellcheck="false" autocomplete="off"></span>
       </div>
     </section>
   </main>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-functions.js";
-import { getFirestore, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+    import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-functions.js";
+    import { getFirestore, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
-const firebaseConfig = {
+    const firebaseConfig = {
       apiKey: "AIzaSyD0zXn1A0xPWiavXIcRf0xxmK-LD0A6TSU",
       authDomain: "kexgh-terminal.firebaseapp.com",
       projectId: "kexgh-terminal",
@@ -106,139 +244,329 @@ const firebaseConfig = {
       appId: "1:877115716564:web:aa94b9f9aec6f1fcbe9c41"
     };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const functions = getFunctions(app, "us-central1");
-const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const functions = getFunctions(app, "us-central1");
+    const db = getFirestore(app);
+    const registerUsername = httpsCallable(functions, "registerUsername");
+    const submitFlag = httpsCallable(functions, "submitFlag");
 
-const terminal = document.querySelector("#terminal");
-const output = document.querySelector("#output");
-const input = document.querySelector("#commandInput");
+    const terminal = document.querySelector("#terminal");
+    const output = document.querySelector("#output");
+    const input = document.querySelector("#commandInput");
+    const promptRow = document.querySelector("#promptRow");
+    const promptText = "guest@portfolio:~$";
 
-function appendLine(text = "", className = "") {
-  const line = document.createElement("div");
-  line.className = className ? `line ${className}` : "line";
-  line.textContent = text;
-  output.appendChild(line);
-  terminal.scrollTop = terminal.scrollHeight;
-}
+    let audioContext;
+    const commandHistory = [];
+    let historyIndex = 0;
 
-function focusInput() {
-  input.focus();
-}
+    const initialLines = [
+      "RETROTERM v3.1.4  640K RAM OK",
+      "BIOS DATE 09/17/1997",
+      "",
+      "Type 'ls' to list files. Type 'help' for available commands.",
+      ""
+    ];
 
-async function ensureFirebaseUser() {
-  if (!auth.currentUser) {
-    await signInAnonymously(auth);
-  }
-}
+    const files = ["portfolio", "about.txt", "contact.txt", "flags", "leaderboard", "readme.md"];
 
-async function registerCtfUsername(username) {
-  await ensureFirebaseUser();
-  const fn = httpsCallable(functions, "registerUsername");
-  const result = await fn({ username });
-  return result.data.message;
-}
-
-async function submitCtfFlag(flag) {
-  await ensureFirebaseUser();
-  const fn = httpsCallable(functions, "submitFlag");
-  const result = await fn({ flag });
-  return result.data.message;
-}
-
-async function getCtfLeaderboard() {
-  const q = query(collection(db, "users"), orderBy("score", "desc"), limit(10));
-  const snapshot = await getDocs(q);
-
-  if (snapshot.empty) return "No players yet.";
-
-  return snapshot.docs
-    .map((doc, i) => {
-      const data = doc.data();
-      return `${i + 1}. ${data.username} — ${data.score} pts`;
-    })
-    .join("\n");
-}
-
-async function runCommand(rawCommand) {
-  const command = rawCommand.trim();
-  const lower = command.toLowerCase();
-
-  appendLine(`guest@portfolio:~$ ${command}`);
-
-  if (!command) return;
-
-  if (lower.startsWith("register ")) {
-    const username = command.split(/\s+/)[1];
-    try {
-      appendLine(await registerCtfUsername(username), "amber");
-    } catch (e) {
-      appendLine(`register error: ${e.message}`, "error");
+    function init() {
+      initialLines.forEach((line) => appendLine(line, line ? "dim" : ""));
+      focusInput();
+      document.addEventListener("click", focusInput);
+      document.addEventListener("selectionchange", keepCaretAtEnd);
     }
-    return;
-  }
 
-  if (lower.startsWith("submit ")) {
-    const flag = command.slice(7);
-    try {
-      appendLine(await submitCtfFlag(flag), "amber");
-    } catch (e) {
-      appendLine(`submit error: ${e.message}`, "error");
+    function ensureAudio() {
+      const AudioCtor = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtor) return null;
+      if (!audioContext) audioContext = new AudioCtor();
+      if (audioContext.state === "suspended") audioContext.resume();
+      return audioContext;
     }
-    return;
-  }
 
-  switch (lower) {
-    case "help":
-      appendLine("commands: help, ls, clear, register <name>, submit <flag>, leaderboard, flags, sudo su", "dim");
-      break;
-
-    case "ls":
-      appendLine("portfolio\nabout.txt\ncontact.txt\n.secret.txt", "dim");
-      break;
-
-    case "flags":
-      appendLine("20 flags available", "dim");
-      appendLine("Easy: 10 | Medium: 5 | Hard: 5", "dim");
-      appendLine("Use: submit FLAG{example}", "dim");
-      break;
-
-    case "leaderboard":
-      try {
-        appendLine(await getCtfLeaderboard(), "amber");
-      } catch (e) {
-        appendLine(`leaderboard error: ${e.message}`, "error");
+    function playKeyClick(isReturnKey = false) {
+      const ctx = ensureAudio();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const noiseLength = isReturnKey ? 0.055 : 0.034;
+      const buffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * noiseLength), ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < data.length; i += 1) {
+        const decay = 1 - i / data.length;
+        data[i] = (Math.random() * 2 - 1) * decay * decay;
       }
-      break;
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+      const highpass = ctx.createBiquadFilter();
+      highpass.type = "highpass";
+      highpass.frequency.value = isReturnKey ? 1700 : 2300;
+      const clickGain = ctx.createGain();
+      clickGain.gain.setValueAtTime(isReturnKey ? 0.18 : 0.13, now);
+      clickGain.gain.exponentialRampToValueAtTime(0.001, now + noiseLength);
+      const tick = ctx.createOscillator();
+      tick.type = "square";
+      tick.frequency.setValueAtTime(isReturnKey ? 920 : 1350 + Math.random() * 160, now);
+      const tickGain = ctx.createGain();
+      tickGain.gain.setValueAtTime(isReturnKey ? 0.06 : 0.045, now);
+      tickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.018);
+      noise.connect(highpass);
+      highpass.connect(clickGain);
+      clickGain.connect(ctx.destination);
+      tick.connect(tickGain);
+      tickGain.connect(ctx.destination);
+      noise.start(now);
+      noise.stop(now + noiseLength);
+      tick.start(now);
+      tick.stop(now + 0.018);
+    }
 
-    case "sudo su":
-      appendLine("Access denied.", "error");
-      appendLine("FLAG{you_tried_root}", "amber");
-      break;
+    function focusInput() {
+      input.focus({ preventScroll: true });
+      keepCaretAtEnd();
+    }
 
-    case "clear":
-      output.innerHTML = "";
-      break;
+    function keepCaretAtEnd() {
+      if (document.activeElement !== input) return;
+      const range = document.createRange();
+      const selection = window.getSelection();
+      range.selectNodeContents(input);
+      range.collapse(false);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
 
-    default:
-      appendLine(`command not found: ${command}`, "error");
-  }
-}
+    function appendLine(text = "", className = "") {
+      const line = document.createElement("div");
+      line.className = className ? `line ${className}` : "line";
+      line.textContent = text;
+      output.appendChild(line);
+      scrollToBottom();
+      return line;
+    }
 
-input.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    const command = input.textContent.replace(/\n/g, "");
-    input.textContent = "";
-    runCommand(command);
-  }
-});
+    function appendHtmlLine(html, className = "") {
+      const line = document.createElement("div");
+      line.className = className ? `line ${className}` : "line";
+      line.innerHTML = html;
+      output.appendChild(line);
+      scrollToBottom();
+      return line;
+    }
 
-appendLine("RETROTERM v3.1.4  640K RAM OK", "dim");
-appendLine("Type 'help' for available commands.", "dim");
-appendLine("");
-focusInput();
-</script>
+    function appendCommand(command) { appendLine(`${promptText} ${command}`); }
+
+    function appendFileList() {
+      const wrapper = document.createElement("div");
+      wrapper.className = "files";
+      files.forEach((file) => {
+        const item = document.createElement("span");
+        item.textContent = file;
+        wrapper.appendChild(item);
+      });
+      output.appendChild(wrapper);
+      scrollToBottom();
+    }
+
+    function typeLine(text, className = "", speed = 44) {
+      return new Promise((resolve) => {
+        const line = appendLine("", className);
+        let i = 0;
+        const timer = window.setInterval(() => {
+          line.textContent += text.charAt(i);
+          playKeyClick(false);
+          i += 1;
+          scrollToBottom();
+          if (i >= text.length) {
+            window.clearInterval(timer);
+            resolve();
+          }
+        }, speed);
+      });
+    }
+
+    async function ensureFirebaseUser() {
+      if (auth.currentUser) return auth.currentUser;
+      const credential = await signInAnonymously(auth);
+      return credential.user;
+    }
+
+    function getFirebaseErrorMessage(error) {
+      if (!error) return "Unknown Firebase error.";
+      return error.message || error.code || String(error);
+    }
+
+    async function handleRegister(rawCommand) {
+      const username = rawCommand.trim().split(/\s+/).slice(1).join(" ");
+      if (!username) {
+        appendLine("usage: register <name>", "error");
+        return;
+      }
+      try {
+        await ensureFirebaseUser();
+        const result = await registerUsername({ username });
+        appendLine(result.data?.message || `registered ${username}`, "amber");
+      } catch (error) {
+        appendLine(`register error: ${getFirebaseErrorMessage(error)}`, "error");
+      }
+    }
+
+    async function handleSubmit(rawCommand) {
+      const command = rawCommand.trim();
+      const flag = command.slice(command.indexOf(" ") + 1).trim();
+      if (!flag || flag === command) {
+        appendLine("usage: submit <flag>", "error");
+        return;
+      }
+      try {
+        await ensureFirebaseUser();
+        const result = await submitFlag({ flag });
+        appendLine(result.data?.message || "flag submitted", "amber");
+      } catch (error) {
+        appendLine(`submit error: ${getFirebaseErrorMessage(error)}`, "error");
+      }
+    }
+
+    async function handleLeaderboard() {
+      try {
+        const leaderboardQuery = query(collection(db, "users"), orderBy("score", "desc"), limit(10));
+        const snapshot = await getDocs(leaderboardQuery);
+        if (snapshot.empty) {
+          appendLine("No players yet.", "dim");
+          return;
+        }
+        appendLine("Top 10 users", "amber");
+        snapshot.docs.forEach((doc, index) => {
+          const data = doc.data();
+          const username = data.username || doc.id;
+          const score = Number.isFinite(data.score) ? data.score : 0;
+          appendLine(`${index + 1}. ${username} - ${score} pts`, "dim");
+        });
+      } catch (error) {
+        appendLine(`leaderboard error: ${getFirebaseErrorMessage(error)}`, "error");
+      }
+    }
+
+    async function runCommand(rawCommand) {
+      const trimmedCommand = rawCommand.trim();
+      const command = trimmedCommand.toLowerCase();
+      appendCommand(rawCommand);
+      if (command) {
+        commandHistory.push(rawCommand);
+        historyIndex = commandHistory.length;
+      }
+      if (command.startsWith("register ")) {
+        await handleRegister(rawCommand);
+        return;
+      }
+      if (command.startsWith("submit ")) {
+        await handleSubmit(rawCommand);
+        return;
+      }
+      switch (command) {
+        case "":
+          break;
+        case "ls":
+        case "dir":
+          appendFileList();
+          break;
+        case "portfolio":
+        case "./portfolio":
+          input.contentEditable = "false";
+          await typeLine("types coming soon", "amber", 64);
+          input.contentEditable = "true";
+          focusInput();
+          break;
+        case "flags":
+          appendLine("20 flags available.", "dim");
+          appendLine("Easy: 10 | Medium: 5 | Hard: 5", "dim");
+          appendLine("Use: submit FLAG{example}", "dim");
+          break;
+        case "leaderboard":
+          await handleLeaderboard();
+          break;
+        case "sudo su":
+          appendLine("Access denied.", "error");
+          appendLine("FLAG{you_tried_root}", "amber");
+          break;
+        case "about":
+        case "cat about.txt":
+          appendLine("Builder, designer, and terminal enjoyer.", "dim");
+          break;
+        case "contact":
+        case "cat contact.txt":
+          appendLine("contact: hello@example.com", "dim");
+          break;
+        case "help":
+          appendLine("commands: ls, portfolio, cat about.txt, cat contact.txt, clear, register <name>, submit <flag>, leaderboard, flags, sudo su", "dim");
+          break;
+        case "clear":
+          output.innerHTML = "";
+          break;
+        default:
+          appendHtmlLine(`<span class="error">command not found:</span> ${escapeHtml(rawCommand)}`);
+      }
+    }
+
+    function escapeHtml(value) {
+      return value
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function setInput(value) {
+      input.textContent = value;
+      keepCaretAtEnd();
+    }
+
+    function scrollToBottom() { terminal.scrollTop = terminal.scrollHeight; }
+
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        const command = input.textContent.replace(/\n/g, "");
+        setInput("");
+        playKeyClick(true);
+        runCommand(command);
+        return;
+      }
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        if (commandHistory.length) {
+          historyIndex = Math.max(0, historyIndex - 1);
+          setInput(commandHistory[historyIndex] || "");
+        }
+        return;
+      }
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        if (commandHistory.length) {
+          historyIndex = Math.min(commandHistory.length, historyIndex + 1);
+          setInput(commandHistory[historyIndex] || "");
+        }
+        return;
+      }
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      if (event.key.length === 1 || event.key === "Backspace" || event.key === "Delete" || event.key === "Tab") {
+        if (event.key === "Tab") event.preventDefault();
+        playKeyClick(false);
+      }
+    });
+
+    input.addEventListener("paste", (event) => {
+      event.preventDefault();
+      const text = event.clipboardData.getData("text/plain").replace(/[\r\n]+/g, " ");
+      document.execCommand("insertText", false, text);
+    });
+
+    promptRow.addEventListener("click", focusInput);
+    terminal.addEventListener("click", focusInput);
+
+    init();
+  </script>
 </body>
 </html>
