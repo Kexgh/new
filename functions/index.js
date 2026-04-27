@@ -20,6 +20,20 @@ exports.registerUsername = onCall(async (request) => {
     throw new HttpsError("unauthenticated", "You must be signed in.");
   }
 
+  const userRef = db.collection("users").doc(uid);
+  const existingUser = await userRef.get();
+
+  if (existingUser.exists) {
+    const data = existingUser.data();
+
+    if (data.username) {
+      return {
+        success: false,
+        message: `You are already registered as ${data.username}.`,
+      };
+    }
+  }
+
   const username = request.data.username;
 
   if (!username || typeof username !== "string") {
@@ -45,7 +59,7 @@ exports.registerUsername = onCall(async (request) => {
     throw new HttpsError("already-exists", "Username already taken.");
   }
 
-  await db.collection("users").doc(uid).set(
+  await userRef.set(
     {
       username: cleanUsername,
       score: 0,
