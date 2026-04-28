@@ -207,7 +207,7 @@
     <section class="terminal" id="terminal" role="application" aria-label="Interactive terminal">
       <div id="output"></div>
       <div class="prompt-row" id="promptRow">
-        <span class="prompt">guest@portfolio:~$</span>
+        <span class="prompt" id="promptText">guest@portfolio:~$</span>
         <span id="commandInput" class="command-input" role="textbox" aria-label="Terminal command input" aria-multiline="false" contenteditable="true" spellcheck="false" autocomplete="off"></span>
       </div>
     </section>
@@ -215,9 +215,9 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
     import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-functions.js";
-    import { getFirestore, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+    import { getFirestore, collection, doc, query, orderBy, limit, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyD0zXn1A0xPWiavXIcRf0xxmK-LD0A6TSU",
@@ -232,16 +232,22 @@
     const auth = getAuth(app);
     const functions = getFunctions(app, "us-central1");
     const db = getFirestore(app);
-    const registerUsername = httpsCallable(functions, "registerUsername");
+    const registerAccount = httpsCallable(functions, "registerAccount");
     const submitFlag = httpsCallable(functions, "submitFlag");
 
     const terminal = document.querySelector("#terminal");
     const output = document.querySelector("#output");
     const input = document.querySelector("#commandInput");
+    const prompt = document.querySelector("#promptText");
     const promptRow = document.querySelector("#promptRow");
-    const promptText = "guest@portfolio:~$";
+    const defaultPromptText = "guest@portfolio:~$";
+    const passwordPromptText = "password:";
+    const authEmailDomain = "kexgh.local";
 
     let audioContext;
+    let currentUserProfile = null;
+    let pendingPasswordRequest = null;
+    let passwordBuffer = "";
     const commandHistory = [];
     let historyIndex = 0;
 
@@ -258,6 +264,7 @@
 
     function init() {
       initialLines.forEach((line) => appendLine(line, line ? "dim" : ""));
+      onAuthStateChanged(auth, updateCurrentUserProfile);
       focusInput();
       document.addEventListener("click", focusInput);
       document.addEventListener("selectionchange", keepCaretAtEnd);
@@ -340,7 +347,7 @@
       return line;
     }
 
-    function appendCommand(command) { appendLine(`${promptText} ${command}`); }
+    function appendCommand(command) { appendLine(`${prompt.textContent} ${command}`); }
 
     function appendFileList() {
       const wrapper = document.createElement("div");
@@ -371,15 +378,90 @@
       });
     }
 
-    async function ensureFirebaseUser() {
+    async function updateCurrentUserProfile(user) {
+      if (!user) {
+        currentUserProfile = null;
+        return;
+      }
+
+      try {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        currentUserProfile = userDoc.exists() ? userDoc.data() : null;
+      } catch (error) {
+        currentUserProfile = null;
+      }
+    }
+
+    function usernameToEmail(username) {
+      return `${username.trim().toLowerCase()}@${authEmailDomain}`;
+    }
+
+    function requireFirebaseUser() {
       if (auth.currentUser) return auth.currentUser;
-      const credential = await signInAnonymously(auth);
-      return credential.user;
+      throw new Error("Log in first. Use: login <username>");
     }
 
     function getFirebaseErrorMessage(error) {
       if (!error) return "Unknown Firebase error.";
       return error.message || error.code || String(error);
+    }
+
+    function requestPassword(action, username) {
+      pendingPasswordRequest = { action, username };
+      passwordBuffer = "";
+      setInput("");
+      setPrompt(passwordPromptText);
+      appendLine(`enter password for ${username}`, "dim");
+    }
+
+    function setPrompt(value) {
+      prompt.textContent = value;
+    }
+
+    async function completePasswordRequest() {
+      const request = pendingPasswordRequest;
+      const password = passwordBuffer;
+      pendingPasswordRequest = null;
+      passwordBuffer = "";
+      appendLine(`${passwordPromptText} ${"*".repeat(password.length)}`);
+      setPrompt(defaultPromptText);
+      setInput("");
+
+      if (!request) return;
+
+      if (!password) {
+        appendLine("password required", "error");
+        return;
+      }
+
+      if (request.action === "register") {
+        await registerWithPassword(request.username, password);
+        return;
+      }
+
+      if (request.action === "login") {
+        await loginWithPassword(request.username, password);
+      }
+    }
+
+    async function registerWithPassword(username, password) {
+      try {
+        const result = await registerAccount({ username, password });
+        await signInWithEmailAndPassword(auth, usernameToEmail(username), password);
+        appendLine(result.data?.message || `registered as ${username}`, "amber");
+      } catch (error) {
+        appendLine(`register error: ${getFirebaseErrorMessage(error)}`, "error");
+      }
+    }
+
+    async function loginWithPassword(username, password) {
+      try {
+        const credential = await signInWithEmailAndPassword(auth, usernameToEmail(username), password);
+        await updateCurrentUserProfile(credential.user);
+        appendLine(`logged in as ${currentUserProfile?.username || username}`, "amber");
+      } catch (error) {
+        appendLine(`login error: ${getFirebaseErrorMessage(error)}`, "error");
+      }
     }
 
     async function handleRegister(rawCommand) {
@@ -388,13 +470,39 @@
         appendLine("usage: register <name>", "error");
         return;
       }
-      try {
-        await ensureFirebaseUser();
-        const result = await registerUsername({ username });
-        appendLine(result.data?.message || `registered ${username}`, "amber");
-      } catch (error) {
-        appendLine(`register error: ${getFirebaseErrorMessage(error)}`, "error");
+      requestPassword("register", username);
+    }
+
+    async function handleLogin(rawCommand) {
+      const username = rawCommand.trim().split(/\s+/).slice(1).join(" ");
+      if (!username) {
+        appendLine("usage: login <name>", "error");
+        return;
       }
+      requestPassword("login", username);
+    }
+
+    async function handleLogout() {
+      try {
+        await signOut(auth);
+        currentUserProfile = null;
+        appendLine("logged out", "amber");
+      } catch (error) {
+        appendLine(`logout error: ${getFirebaseErrorMessage(error)}`, "error");
+      }
+    }
+
+    async function handleWhoami() {
+      if (!auth.currentUser) {
+        appendLine("not logged in", "dim");
+        return;
+      }
+
+      if (!currentUserProfile) {
+        await updateCurrentUserProfile(auth.currentUser);
+      }
+
+      appendLine(currentUserProfile?.username || auth.currentUser.email || auth.currentUser.uid, "amber");
     }
 
     async function handleSubmit(rawCommand) {
@@ -405,7 +513,7 @@
         return;
       }
       try {
-        await ensureFirebaseUser();
+        requireFirebaseUser();
         const result = await submitFlag({ flag });
         appendLine(result.data?.message || "flag submitted", "amber");
       } catch (error) {
@@ -445,6 +553,10 @@
         await handleRegister(rawCommand);
         return;
       }
+      if (command.startsWith("login ")) {
+        await handleLogin(rawCommand);
+        return;
+      }
       if (command.startsWith("submit ")) {
         await handleSubmit(rawCommand);
         return;
@@ -473,12 +585,18 @@
           appendLine("Use: submit FLAG{example}", "dim");
           break;
         case "help --all":
-          appendLine("extended commands: ls -la, cat .secret.txt, login admin, history, reverse, signal, decode", "dim");
+          appendLine("extended commands: ls -la, cat .secret.txt, su admin, history, reverse, signal, decode", "dim");
           appendLine("log files may contain old stories", "dim");
           appendLine("FLAG{read_the_manual}", "amber");
           break;
         case "leaderboard":
           await handleLeaderboard();
+          break;
+        case "logout":
+          await handleLogout();
+          break;
+        case "whoami":
+          await handleWhoami();
           break;
         case "sudo su":
           appendLine("Access denied.", "error");
@@ -487,7 +605,7 @@
         case "cat .secret.txt":
           appendLine("FLAG{hidden_file_found}", "amber");
           break;
-        case "login admin":
+        case "su admin":
           appendLine("username: admin", "dim");
           appendLine("password: ********", "dim");
           appendLine("authentication failed: nice try", "error");
@@ -529,7 +647,7 @@
           appendLine("contact: hello@example.com", "dim");
           break;
         case "help":
-          appendLine("commands: ls, portfolio, cat about.txt, cat contact.txt, clear, register <name>, submit <flag>, leaderboard, flags, sudo su", "dim");
+          appendLine("commands: ls, portfolio, cat about.txt, cat contact.txt, clear, register <name>, login <name>, logout, whoami, submit <flag>, leaderboard, flags, sudo su", "dim");
           break;
         case "clear":
           output.innerHTML = "";
@@ -553,9 +671,43 @@
       keepCaretAtEnd();
     }
 
+    function setPasswordInput(value) {
+      passwordBuffer = value;
+      setInput("*".repeat(passwordBuffer.length));
+    }
+
     function scrollToBottom() { terminal.scrollTop = terminal.scrollHeight; }
 
     input.addEventListener("keydown", (event) => {
+      if (pendingPasswordRequest) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          playKeyClick(true);
+          completePasswordRequest();
+          return;
+        }
+        if (event.key === "Backspace") {
+          event.preventDefault();
+          setPasswordInput(passwordBuffer.slice(0, -1));
+          playKeyClick(false);
+          return;
+        }
+        if (event.key === "Delete") {
+          event.preventDefault();
+          playKeyClick(false);
+          return;
+        }
+        if (event.ctrlKey || event.metaKey || event.altKey) return;
+        if (event.key.length === 1) {
+          event.preventDefault();
+          setPasswordInput(passwordBuffer + event.key);
+          playKeyClick(false);
+          return;
+        }
+        event.preventDefault();
+        return;
+      }
+
       if (event.key === "Enter") {
         event.preventDefault();
         const command = input.textContent.replace(/\n/g, "");
@@ -590,6 +742,10 @@
     input.addEventListener("paste", (event) => {
       event.preventDefault();
       const text = event.clipboardData.getData("text/plain").replace(/[\r\n]+/g, " ");
+      if (pendingPasswordRequest) {
+        setPasswordInput(passwordBuffer + text);
+        return;
+      }
       document.execCommand("insertText", false, text);
     });
 
