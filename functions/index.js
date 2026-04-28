@@ -7,6 +7,7 @@ admin.initializeApp();
 const db = admin.firestore();
 const USERNAME_PATTERN = /^[a-z0-9_]{3,16}$/;
 const AUTH_EMAIL_DOMAIN = "kexgh.local";
+const FUNCTION_REGION = "europe-west1";
 
 function hashFlag(flag) {
   return crypto
@@ -36,7 +37,7 @@ function usernameToEmail(username) {
   return `${username}@${AUTH_EMAIL_DOMAIN}`;
 }
 
-exports.registerAccount = onCall(async (request) => {
+exports.registerAccount = onCall({ region: FUNCTION_REGION }, async (request) => {
   const username = cleanUsername(request.data.username);
   const password = request.data.password;
 
@@ -107,7 +108,7 @@ exports.registerAccount = onCall(async (request) => {
   };
 });
 
-exports.registerUsername = onCall(async (request) => {
+exports.registerUsername = onCall({ region: FUNCTION_REGION }, async (request) => {
   const uid = request.auth?.uid;
 
   if (!uid) {
@@ -142,7 +143,7 @@ exports.registerUsername = onCall(async (request) => {
   };
 });
 
-exports.submitFlag = onCall(async (request) => {
+exports.submitFlag = onCall({ region: FUNCTION_REGION }, async (request) => {
   const uid = request.auth?.uid;
 
   if (!uid) {
