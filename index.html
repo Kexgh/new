@@ -20,10 +20,7 @@
     * { box-sizing: border-box; }
 
     html,
-    body {
-      min-height: 100%;
-      margin: 0;
-    }
+    body { min-height: 100%; margin: 0; }
 
     body {
       display: grid;
@@ -154,10 +151,7 @@
       min-height: 1.48em;
     }
 
-    .prompt {
-      flex: 0 0 auto;
-      color: var(--green);
-    }
+    .prompt { flex: 0 0 auto; color: var(--green); }
 
     .command-input {
       position: relative;
@@ -183,9 +177,7 @@
     }
 
     .boot { animation: boot-flicker 2.4s steps(2, end) 1; }
-
     @keyframes blink { 50% { opacity: 0; } }
-
     @keyframes boot-flicker {
       0%, 8%, 14%, 19%, 24% { opacity: 0.16; filter: brightness(1.8); }
       5%, 11%, 16%, 22%, 100% { opacity: 1; filter: brightness(1); }
@@ -200,16 +192,8 @@
         border-left: 0;
         border-right: 0;
       }
-      .terminal-bar {
-        height: 38px;
-        padding: 0 12px;
-        font-size: 12px;
-      }
-      .terminal {
-        height: calc(100% - 38px);
-        padding: 16px 14px;
-        font-size: 15px;
-      }
+      .terminal-bar { height: 38px; padding: 0 12px; font-size: 12px; }
+      .terminal { height: calc(100% - 38px); padding: 16px 14px; font-size: 15px; }
     }
   </style>
 </head>
@@ -270,6 +254,7 @@
     ];
 
     const files = ["portfolio", "about.txt", "contact.txt", "flags", "leaderboard", "readme.md"];
+    const hiddenFiles = [".secret.txt"];
 
     function init() {
       initialLines.forEach((line) => appendLine(line, line ? "dim" : ""));
@@ -471,6 +456,10 @@
         case "dir":
           appendFileList();
           break;
+        case "ls -la":
+          appendFileList();
+          hiddenFiles.forEach((file) => appendLine(file, "dim"));
+          break;
         case "portfolio":
         case "./portfolio":
           input.contentEditable = "false";
@@ -479,9 +468,14 @@
           focusInput();
           break;
         case "flags":
-          appendLine("20 flags available.", "dim");
-          appendLine("Easy: 10 | Medium: 5 | Hard: 5", "dim");
+          appendLine("10 flags currently active.", "dim");
+          appendLine("Easy: 8 | Medium: 2", "dim");
           appendLine("Use: submit FLAG{example}", "dim");
+          break;
+        case "help --all":
+          appendLine("extended commands: ls -la, cat .secret.txt, login admin, history, reverse, signal, decode", "dim");
+          appendLine("log files may contain old stories", "dim");
+          appendLine("FLAG{read_the_manual}", "amber");
           break;
         case "leaderboard":
           await handleLeaderboard();
@@ -489,6 +483,42 @@
         case "sudo su":
           appendLine("Access denied.", "error");
           appendLine("FLAG{you_tried_root}", "amber");
+          break;
+        case "cat .secret.txt":
+          appendLine("FLAG{hidden_file_found}", "amber");
+          break;
+        case "login admin":
+          appendLine("username: admin", "dim");
+          appendLine("password: ********", "dim");
+          appendLine("authentication failed: nice try", "error");
+          appendLine("FLAG{social_engineering_failed}", "amber");
+          break;
+        case "destroy universe":
+          appendLine("command not found... but ambition noted.", "error");
+          appendLine("FLAG{chaotic_energy}", "amber");
+          break;
+        case "history":
+          appendLine("001  ls", "dim");
+          appendLine("002  cat readme.md", "dim");
+          appendLine("003  sudo su", "dim");
+          appendLine("004  grep -R secrets /", "dim");
+          appendLine("FLAG{history_remembers}", "amber");
+          break;
+        case "reverse":
+          appendLine("}sdrawkcab_kniht{GALF", "amber");
+          break;
+        case "cat /var/log/access.log":
+          appendLine("1997-09-17 03:14:08 GET /admin 401", "dim");
+          appendLine("1997-09-17 03:15:22 GET /backup.tar.gz 403", "dim");
+          appendLine("1997-09-17 03:16:01 POST /login admin denied", "dim");
+          appendLine("FLAG{logs_tell_stories}", "amber");
+          break;
+        case "signal":
+          appendLine("Signal received. Decode required.", "dim");
+          appendLine("..-. .-.. .- --.  -.. --- - ... .- -. -.. -.. .- ... .... . ...", "amber");
+          break;
+        case "decode":
+          appendLine("RkxBR3tiYXNlNjRfaXNfZnVufQ==", "amber");
           break;
         case "about":
         case "cat about.txt":
