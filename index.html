@@ -373,6 +373,58 @@
     const files = ["portfolio", "about.txt", "contact.txt", "flags", "leaderboard", "readme.md"];
     const hiddenFiles = [".secret.txt"];
     const reveal = (value) => atob(value);
+    const flagHints = {
+      root_access: {
+        name: "Root Access",
+        difficulty: "easy",
+        hint: "Privilege escalation is noisy here. Try the command you probably should not be allowed to run."
+      },
+      read_manual: {
+        name: "Read The Manual",
+        difficulty: "easy",
+        hint: "The normal help output is only the quick page. Ask for a little more detail."
+      },
+      hidden_file: {
+        name: "Hidden File",
+        difficulty: "easy",
+        hint: "Some files do not show up in a basic directory listing. Look with a more curious version of ls."
+      },
+      wrong_login: {
+        name: "Wrong Login",
+        difficulty: "easy",
+        hint: "A familiar admin username is tempting. The failed attempt still tells you something."
+      },
+      chaotic_energy: {
+        name: "Chaotic Energy",
+        difficulty: "easy",
+        hint: "Not every command needs to make sense. Try something dramatically unreasonable."
+      },
+      history: {
+        name: "History Remembers",
+        difficulty: "easy",
+        hint: "Old terminals remember what people typed. Check the command trail."
+      },
+      backwards: {
+        name: "Think Backwards",
+        difficulty: "easy",
+        hint: "If the output looks wrong from left to right, read it from the other direction."
+      },
+      access_logs: {
+        name: "Logs Tell Stories",
+        difficulty: "easy",
+        hint: "Web servers keep diaries. The interesting path is under /var/log."
+      },
+      morse: {
+        name: "Dots And Dashes",
+        difficulty: "medium",
+        hint: "The signal is not random punctuation. Dots, dashes, and spaces have an older alphabet."
+      },
+      base64: {
+        name: "Base64 Is Fun",
+        difficulty: "medium",
+        hint: "That chunky encoded text is designed to be decoded, not guessed."
+      }
+    };
 
     function init() {
       initialLines.forEach((line) => appendLine(line, line ? "dim" : ""));
@@ -683,6 +735,30 @@
       }
     }
 
+    function handleHints(rawCommand) {
+      const topic = rawCommand.trim().split(/\s+/).slice(1).join(" ").toLowerCase();
+
+      if (!topic) {
+        appendLine("available hints:", "amber");
+        Object.entries(flagHints).forEach(([id, data]) => {
+          appendLine(`${id.padEnd(15)} ${data.name} [${data.difficulty}]`, "dim");
+        });
+        appendLine("usage: hint <id>", "dim");
+        return;
+      }
+
+      const normalizedTopic = topic.replace(/\s+/g, "_");
+      const hint = flagHints[normalizedTopic];
+
+      if (!hint) {
+        appendLine("hint not found. Use: hints", "error");
+        return;
+      }
+
+      appendLine(`${hint.name} [${hint.difficulty}]`, "amber");
+      appendLine(hint.hint, "dim");
+    }
+
     async function runCommand(rawCommand) {
       const trimmedCommand = rawCommand.trim();
       const command = trimmedCommand.toLowerCase();
@@ -701,6 +777,10 @@
       }
       if (command.startsWith("submit ")) {
         await handleSubmit(rawCommand);
+        return;
+      }
+      if (command.startsWith("hint ")) {
+        handleHints(rawCommand);
         return;
       }
       switch (command) {
@@ -725,6 +805,10 @@
           appendLine("10 flags currently active.", "dim");
           appendLine("Easy: 8 | Medium: 2", "dim");
           appendLine("Use: submit FLAG{example}", "dim");
+          appendLine("Stuck? Use: hints", "dim");
+          break;
+        case "hints":
+          handleHints("hints");
           break;
         case "tutorial":
           showTutorial(false);
@@ -792,7 +876,7 @@
           appendLine("contact: hello@example.com", "dim");
           break;
         case "help":
-          appendLine("commands: ls, portfolio, cat about.txt, cat contact.txt, clear, tutorial, register <name>, login <name>, logout, whoami, submit <flag>, leaderboard, flags, sudo su", "dim");
+          appendLine("commands: ls, portfolio, cat about.txt, cat contact.txt, clear, tutorial, register <name>, login <name>, logout, whoami, submit <flag>, leaderboard, flags, hints, hint <id>, sudo su", "dim");
           break;
         case "clear":
           output.innerHTML = "";
