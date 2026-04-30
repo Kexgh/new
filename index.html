@@ -728,6 +728,14 @@
           const data = doc.data();
           const username = data.username || doc.id;
           const score = Number.isFinite(data.score) ? data.score : 0;
+          const nameColor = getSafeHexColor(data.nameColor || data.color);
+          if (nameColor) {
+            appendHtmlLine(
+              `${index + 1}. <span style="color: ${nameColor}">${escapeHtml(username)}</span> - ${score} pts`,
+              "dim"
+            );
+            return;
+          }
           appendLine(`${index + 1}. ${username} - ${score} pts`, "dim");
         });
       } catch (error) {
@@ -893,6 +901,12 @@
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+    }
+
+    function getSafeHexColor(value) {
+      if (typeof value !== "string") return "";
+      const color = value.trim();
+      return /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(color) ? color : "";
     }
 
     function setInput(value) {
