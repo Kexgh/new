@@ -261,6 +261,7 @@
 
     const files = ["portfolio", "about.txt", "contact.txt", "flags", "leaderboard", "readme.md"];
     const hiddenFiles = [".secret.txt"];
+    const reveal = (value) => atob(value);
 
     function init() {
       initialLines.forEach((line) => appendLine(line, line ? "dim" : ""));
@@ -587,7 +588,7 @@
         case "help --all":
           appendLine("extended commands: ls -la, cat .secret.txt, su admin, history, reverse, signal, decode", "dim");
           appendLine("log files may contain old stories", "dim");
-          appendLine("FLAG{read_the_manual}", "amber");
+          appendLine(reveal("RkxBR3tyZWFkX3RoZV9tYW51YWx9"), "amber");
           break;
         case "leaderboard":
           await handleLeaderboard();
@@ -600,27 +601,27 @@
           break;
         case "sudo su":
           appendLine("Access denied.", "error");
-          appendLine("FLAG{you_tried_root}", "amber");
+          appendLine(reveal("RkxBR3t5b3VfdHJpZWRfcm9vdH0="), "amber");
           break;
         case "cat .secret.txt":
-          appendLine("FLAG{hidden_file_found}", "amber");
+          appendLine(reveal("RkxBR3toaWRkZW5fZmlsZV9mb3VuZH0="), "amber");
           break;
         case "su admin":
           appendLine("username: admin", "dim");
           appendLine("password: ********", "dim");
           appendLine("authentication failed: nice try", "error");
-          appendLine("FLAG{social_engineering_failed}", "amber");
+          appendLine(reveal("RkxBR3tzb2NpYWxfZW5naW5lZXJpbmdfZmFpbGVkfQ=="), "amber");
           break;
         case "destroy universe":
           appendLine("command not found... but ambition noted.", "error");
-          appendLine("FLAG{chaotic_energy}", "amber");
+          appendLine(reveal("RkxBR3tjaGFvdGljX2VuZXJneX0="), "amber");
           break;
         case "history":
           appendLine("001  ls", "dim");
           appendLine("002  cat readme.md", "dim");
           appendLine("003  sudo su", "dim");
           appendLine("004  grep -R secrets /", "dim");
-          appendLine("FLAG{history_remembers}", "amber");
+          appendLine(reveal("RkxBR3toaXN0b3J5X3JlbWVtYmVyc30="), "amber");
           break;
         case "reverse":
           appendLine("}sdrawkcab_kniht{GALF", "amber");
@@ -629,7 +630,7 @@
           appendLine("1997-09-17 03:14:08 GET /admin 401", "dim");
           appendLine("1997-09-17 03:15:22 GET /backup.tar.gz 403", "dim");
           appendLine("1997-09-17 03:16:01 POST /login admin denied", "dim");
-          appendLine("FLAG{logs_tell_stories}", "amber");
+          appendLine(reveal("RkxBR3tsb2dzX3RlbGxfc3Rvcmllc30="), "amber");
           break;
         case "signal":
           appendLine("Signal received. Decode required.", "dim");
